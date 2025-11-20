@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dark vs Light Reading Experiment</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+  body { font-family:'Inter',sans-serif; margin:0; padding:0; transition: background 0.3s,color 0.3s; overflow-x:hidden; }
+  body.light-mode { background:#f0f0f3; color:#1a1a1a; }
+  body.dark-mode { background:#121212; color:#e0e0e0; }
+
+  .container { max-width:700px; margin:0 auto; padding:30px 20px; position:relative; z-index:1; }
+  h2 { text-align:center; font-weight:700; margin-bottom:20px; }
+
+  .card { background-color:inherit; border:1px solid #ccc; border-radius:20px; padding:25px; margin-bottom:25px; box-shadow:0 6px 20px rgba(0,0,0,0.05); transition: all 0.3s; }
+  .card:hover { transform:translateY(-2px); box-shadow:0 8px 25px rgba(0,0,0,0.15); }
+
+  input, textarea, select { padding:12px; margin:8px 0; border-radius:12px; width:100%; box-sizing:border-box; font-size:16px; border:1px solid #ccc; background-color:inherit; color:inherit; }
+  button { padding:12px 16px; border:none; border-radius:12px; font-weight:600; cursor:pointer; transition: transform 0.2s, box-shadow 0.2s; }
+  button:hover { transform:translateY(-2px); box-shadow:0 4px 15px rgba(0,0,0,0.2); }
+  .theme-toggle { background:#ff6f61; color:#fff; }
+  .gradient-btn { background:linear-gradient(90deg,#6a11cb 0%,#2575fc 100%); color:#fff; }
+
+  .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+  .hidden { display:none; }
+
+  #progressBar { height:10px; background:#ddd; border-radius:10px; overflow:hidden; margin-bottom:15px; }
+  #progress { height:100%; width:0%; background:#2575fc; transition: width 0.5s; }
+
+  /* Consent modal */
+  #consentModal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center; z-index:999; }
+  #consentModal .modal-content { background:#fff; color:#000; padding:30px; border-radius:20px; max-width:500px; text-align:center; position:relative; }
+  #consentModal button { margin-top:20px; }
+
+  /* Particle animation */
+  .particle { position:absolute; border-radius:50%; opacity:0.7; pointer-events:none; }
+  @keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-20px);}}
+
+  /* Multiple Choice Questions */
+.question-card {
+  margin-top: 15px;
+  padding: 18px 20px;
+  border-radius: 20px;
+  border: 1px solid #ccc;
+  background-color: inherit;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  animation: fadeInCard 0.3s ease forwards;
+}
+
+@keyframes fadeInCard {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.question-card p {
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.question-card label {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* space between radio and text */
+  padding: 10px 12px;
+  margin: 5px 0;
+  border-radius: 12px;
+  cursor: pointer;
+  border: 1px solid #aaa;
+  transition: all 0.2s;
+}
+
+.question-card label:hover {
+  background-color: #2575fc;
+  color: #fff;
+}
+
+.question-card input[type=radio] {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+}
+
+  /* Progress indicator text */
+  #progressText { text-align:center; margin-bottom:10px; font-weight:600; }
+
+  .profile-card {
+  padding: 25px;
+  border-radius: 14px;
+  margin-bottom: 25px;
+  animation: fadeIn 0.3s ease;
+}
+
+.profile-title {
+  font-size: 1.3rem;
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-group label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.input-group input,
+.input-group select {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-color);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Stats Page Fade Animation */
+.fade {
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px);}
+    to   { opacity: 1; transform: translateY(0);}
+}
+
+/* Stats Card */
+#statsPage .card {
+    margin-top: 20px;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    background: var(--card-bg);
+    line-height: 1.8;
+    font-size: 1.05rem;
+}
+</style>
+</head>
+<body class="light-mode">
+
+<div id="particles"></div>
+
+<div id="consentModal">
+  <div class="modal-content">
+    <h2>Consent Form</h2>
+    <p>Please accept to participate in this reading experiment. Your data will be collected anonymously.</p>
+    <button id="acceptConsent" class="gradient-btn">Accept</button>
+  </div>
+</div>
+
+<!-- Login Page -->
+<div id="loginPage" class="container hidden">
+  <!-- Logo -->
+  <div style="text-align:center; margin-bottom:20px;">
+    <img src="quikcheck.png" alt="Experiment Logo" style="max-width:500px; height:auto;">
+  </div>
+  <h2>Login</h2>
+  <div class="card">
+    <input type="text" id="username" placeholder="Username" />
+    <input type="password" id="password" placeholder="Password" />
+    <button id="loginBtn" class="gradient-btn">Login</button>
+  </div>
+</div>
+
+<!-- Profile / Dashboard Page -->
+<div id="profilePage" class="container hidden">
+
+  <div class="header">
+    <h2>Dashboard</h2>
+    <button id="themeToggleProfile" class="theme-toggle">Toggle Theme</button>
+  </div>
+
+  <div class="card profile-card" id="profileCard">
+    <h3 class="profile-title">Your Profile</h3>
+
+    <div class="profile-grid">
+
+      <div class="input-group">
+        <label>Full Name</label>
+        <input type="text" id="profileName" placeholder="Enter your name">
+      </div>
+
+      <div class="input-group">
+        <label>Email</label>
+        <input type="email" id="profileEmail" placeholder="Enter your email">
+      </div>
+
+      <div class="input-group">
+        <label>Age</label>
+        <input type="number" id="profileAge" min="10" max="100" placeholder="Enter age">
+      </div>
+
+      <div class="input-group">
+        <label>Gender</label>
+        <select id="profileGender">
+          <option value="">Select…</option>
+          <option>Male</option>
+          <option>Female</option>
+          <option>Prefer not to say</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label>Education Level</label>
+        <select id="profileEducation">
+          <option value="">Select…</option>
+          <option>High School</option>
+          <option>Senior High School</option>
+          <option>College</option>
+          <option>Post-Graduate</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label>Occupation / Field of Study</label>
+        <input type="text" id="profileOccupation" placeholder="e.g. IT Student">
+      </div>
+
+      <div class="input-group">
+        <label>Tech Proficiency</label>
+        <select id="profileTech">
+          <option value="">Select…</option>
+          <option>Beginner</option>
+          <option>Intermediate</option>
+          <option>Advanced</option>
+        </select>
+      </div>
+
+    </div>
+
+    <button id="saveProfile" class="gradient-btn">Save Profile</button>
+  </div>
+
+  <!-- 📊 Dashboard Stats Section -->
+  <div class="card" id="dashboardStats">
+    <p id="passageProgress">Passages completed: 0/0</p>
+    <p id="estimatedTime">Estimated reading time: 0s</p>
+    <button id="startExperiment" class="gradient-btn">Start Task</button>
+  </div>
+
+  <div id="dashboardStatsSummary">
+  <p><strong>Passages completed:</strong> <span id="dashboardPassages">0</span></p>
+  <p><strong>Total reading time:</strong> <span id="dashboardTime">0s</span></p>
+  <p><strong>Average accuracy:</strong> <span id="dashboardAccuracy">0%</span></p>
+</div>
+
+</div>
+
+
+<!-- Main Experiment Page -->
+<div id="mainPage" class="container hidden">
+  <div class="header">
+    <h2>Reading Task</h2>
+    <button id="themeToggleMain" class="theme-toggle">Toggle Theme</button>
+  </div>
+  <div id="progressText">0/0 passages completed</div>
+  <div id="progressBar"><div id="progress"></div></div>
+  <div class="card" id="passageContainer">
+    <p id="passageText">[Passage will appear here]</p>
+  </div>
+  <div id="questionsContainer" class="hidden"></div>
+  <div id="resultsPage" class="hidden card">
+    <h2>Summary</h2>
+    <p id="summaryText"></p>
+    <button id="exportPDF" class="gradient-btn">Export CSV</button>
+  </div>
+</div>
+
+<!-- 📊 Reading Stats Dashboard -->
+<div id="statsPage" class="container hidden fade">
+    <h2>Reading Summary</h2>
+
+    <div class="card">
+        <p><strong>Total Reading Time:</strong> <span id="totalReadingTime">0s</span></p>
+        <p><strong>Fastest Passage:</strong> <span id="fastestPassage">–</span></p>
+        <p><strong>Slowest Passage:</strong> <span id="slowestPassage">–</span></p>
+        <p><strong>Accuracy Score:</strong> <span id="accuracyScore">0%</span></p>
+    </div>
+
+    <button id="exportResults" class="gradient-btn">Export Results (CSV)</button>
+    <button id="returnDashboard" class="gradient-btn">Return to Dashboard</button>
+</div>
+
+<script>
+let passageStartTime = 0;
+let currentTheme = 'light-mode';
+let currentPassage = 0;
+
+// Track reading stats
+let readingTimes = [];
+let correctnessScores = [];
+
+const participantData = { theme: currentTheme, answers: [] };
+
+const loginPage = document.getElementById('loginPage');
+const profilePage = document.getElementById('profilePage');
+const mainPage = document.getElementById('mainPage');
+const consentModal = document.getElementById('consentModal');
+const progressBar = document.getElementById('progress');
+const progressText = document.getElementById('progressText');
+const questionsContainer = document.getElementById('questionsContainer');
+
+function toggleTheme() {
+    if (currentTheme === 'light-mode') {
+        document.body.classList.replace('light-mode','dark-mode');
+        currentTheme = 'dark-mode';
+    } else {
+        document.body.classList.replace('dark-mode','light-mode');
+        currentTheme = 'light-mode';
+    }
+}
+
+// Consent modal
+document.getElementById('acceptConsent').addEventListener('click', () => {
+    consentModal.style.display = 'none';
+    loginPage.classList.remove('hidden');
+});
+
+// Login
+document.getElementById('loginBtn').addEventListener('click', () => {
+    const user = document.getElementById('username').value;
+    const pass = document.getElementById('password').value;
+    if(user && pass){
+        loginPage.classList.add('hidden');
+        profilePage.classList.remove('hidden');
+    } else {
+        alert('Enter username and password');
+    }
+});
+
+// Theme toggles
+document.getElementById('themeToggleProfile').addEventListener('click', toggleTheme);
+document.getElementById('themeToggleMain').addEventListener('click', toggleTheme);
+
+// Start experiment
+document.getElementById('startExperiment').addEventListener('click', () => {
+    profilePage.classList.add('hidden');
+    mainPage.classList.remove('hidden');
+    loadPassage();
+});
+
+// Define passages with correct answers
+const passages = [
+  {
+    text: `The rapid rise of social media has changed the way we communicate. Platforms like Instagram and TikTok allow instant sharing of thoughts, photos, and videos, creating new cultural trends in real time. However, while these apps can foster connections, they also come with challenges like reduced attention span and online stress.`,
+    questions: [
+      { question: "Which of the following is a challenge of social media?", choices: ["Connection","Reduced attention","Challenge","Platform"], correct: "Reduced attention" },
+      { question: "Which platform is mentioned in the passage?", choices: ["Instagram","Online stress","Connections","TikTok"], correct: "Instagram" }
+    ]
+  },
+  {
+    text: `Artificial intelligence is increasingly being used in everyday technology. From smart assistants to recommendation systems, AI can enhance convenience and efficiency. Yet, it raises ethical concerns regarding privacy and job displacement. It is important for users to understand both benefits and risks when interacting with AI-driven applications.`,
+    questions: [
+      { question: "Which of these is a concern related to AI?", choices: ["Smart assistants","Privacy","Efficiency","Job displacement"], correct: "Privacy" },
+      { question: "What should users understand about AI?", choices: ["AI applications","Understanding","Convenience","Risks"], correct: "Risks" }
+    ]
+  },
+  {
+    text: `Climate change continues to impact global ecosystems and human societies. Rising temperatures, extreme weather events, and sea-level rise threaten biodiversity and livelihoods. It is crucial for individuals and governments to take meaningful action through sustainable practices and policies.`,
+    questions: [
+      { question: "Which of the following threatens biodiversity?", choices: ["Global ecosystems","Sea-level rise","Biodiversity","Sustainable practices"], correct: "Sea-level rise" },
+      { question: "What action is crucial to address climate change?", choices: ["Action needed","Temperature rise","Policies","Threats"], correct: "Policies" }
+    ]
+  }
+];
+
+// Load passage
+function loadPassage() {
+    passageStartTime = Date.now();
+    if (currentPassage >= passages.length) {
+        showStatsPage();
+        return;
+    }
+
+    const p = passages[currentPassage];
+    document.getElementById('passageText').innerText = p.text;
+
+    // Update progress
+    progressBar.style.width = `${(currentPassage / passages.length) * 100}%`;
+    progressText.innerText = `${currentPassage + 1}/${passages.length} passages completed`;
+
+    // Clear old questions
+    questionsContainer.innerHTML = '';
+
+    // Add new questions
+    p.questions.forEach((q, i) => {
+        const card = document.createElement('div');
+        card.className = 'question-card';
+
+        const qLabel = document.createElement('p');
+        qLabel.innerText = `Q${i+1}: ${q.question}`;
+        card.appendChild(qLabel);
+
+        q.choices.forEach(choice => {
+            const label = document.createElement('label');
+            const radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.name = `q${i}`;
+            radio.value = choice;
+            label.appendChild(radio);
+            label.appendChild(document.createTextNode(choice));
+            card.appendChild(label);
+        });
+
+        questionsContainer.appendChild(card);
+    });
+
+    const submitBtn = document.createElement('button');
+    submitBtn.className = 'gradient-btn';
+    submitBtn.innerText = 'Submit Answers';
+    submitBtn.addEventListener('click', submitAnswers);
+    questionsContainer.appendChild(submitBtn);
+
+    questionsContainer.classList.remove('hidden');
+}
+
+// Submit answers
+function submitAnswers() {
+    const p = passages[currentPassage];
+    const answers = [];
+    let correctCount = 0;
+
+    questionsContainer.querySelectorAll('.question-card').forEach((card, i) => {
+        const checked = card.querySelector('input[type=radio]:checked');
+        const val = checked ? checked.value : '';
+        answers.push(val);
+        if(val === p.questions[i].correct) correctCount++;
+    });
+
+    const endTime = Date.now();
+    const timeSpent = Math.floor((endTime - passageStartTime) / 1000);
+
+    // Save participant data
+    participantData.answers.push({
+        passage: currentPassage + 1,
+        responses: answers,
+        correct: correctCount,
+        time: timeSpent,
+        timestamp: endTime
+    });
+
+    readingTimes.push(timeSpent);
+    correctnessScores.push(correctCount);
+
+    currentPassage++;
+    loadPassage();
+}
+
+// Show stats dashboard
+function showStatsPage() {
+    mainPage.classList.add('hidden');
+    profilePage.classList.add('hidden');
+    loginPage?.classList.add('hidden');
+    document.getElementById('statsPage').classList.remove('hidden');
+
+    const totalTime = readingTimes.reduce((a,b)=>a+b,0);
+    const fastest = Math.min(...readingTimes);
+    const slowest = Math.max(...readingTimes);
+    const fastestIndex = readingTimes.indexOf(fastest)+1;
+    const slowestIndex = readingTimes.indexOf(slowest)+1;
+    const accuracy = (correctnessScores.reduce((a,b)=>a+b,0) / (passages.length * passages[0].questions.length)) * 100;
+
+    document.getElementById('totalReadingTime').innerText = `${totalTime}s`;
+    document.getElementById('fastestPassage').innerText = `Passage ${fastestIndex} — ${fastest}s`;
+    document.getElementById('slowestPassage').innerText = `Passage ${slowestIndex} — ${slowest}s`;
+    document.getElementById('accuracyScore').innerText = `${accuracy.toFixed(0)}%`;
+}
+
+// Export CSV
+document.getElementById('exportResults').addEventListener('click', () => {
+    let csvContent = 'data:text/csv;charset=utf-8,Theme, Passage, Answers, Correct, Time, Timestamp\n';
+    participantData.answers.forEach(a => {
+        csvContent += `${participantData.theme}, ${a.passage}, "${a.responses.join(' | ')}", ${a.correct}, ${a.time}, ${a.timestamp}\n`;
+    });
+    const link = document.createElement('a');
+    link.setAttribute('href', encodeURI(csvContent));
+    link.setAttribute('download', 'participant_data.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+});
+
+// Back to dashboard
+document.getElementById('returnDashboard').addEventListener('click', () => {
+    document.getElementById('statsPage').classList.add('hidden');
+    profilePage.classList.remove('hidden');
+});
+
+// Animated particles
+const particleContainer = document.getElementById('particles');
+for(let i=0; i<50; i++){
+    const particle = document.createElement('div');
+    particle.className = 'particle';
+    particle.style.width = `${Math.random()*6+4}px`;
+    particle.style.height = particle.style.width;
+    particle.style.background = `hsl(${Math.random()*360},70%,60%)`;
+    particle.style.top = `${Math.random()*100}%`;
+    particle.style.left = `${Math.random()*100}%`;
+    particle.style.animation = `float ${Math.random()*10+5}s ease-in-out infinite`;
+    particleContainer.appendChild(particle);
+}
+
+function updateDashboardStats() {
+    const answers = participantData.answers;
+    if(answers.length === 0) return;
+
+    const totalPassages = answers.length;
+    const totalTime = answers.reduce((sum, a) => sum + a.time, 0);
+    const totalCorrect = answers.reduce((sum, a) => sum + a.correct, 0);
+    const totalQuestions = answers.reduce((sum, a) => sum + a.responses.length, 0);
+    const avgAccuracy = (totalCorrect / totalQuestions) * 100;
+
+    document.getElementById('dashboardPassages').innerText = totalPassages;
+    document.getElementById('dashboardTime').innerText = `${totalTime}s`;
+    document.getElementById('dashboardAccuracy').innerText = `${avgAccuracy.toFixed(0)}%`;
+}
+
+document.getElementById('returnDashboard').addEventListener('click', () => {
+    document.getElementById('statsPage').classList.add('hidden');
+    profilePage.classList.remove('hidden');
+    updateDashboardStats();
+});
+</script>
+</body>
+</html>
